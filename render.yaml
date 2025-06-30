@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: jobqueue-api
+    env: go
+    plan: free
+    buildCommand: go build -o main ./cmd/main.go
+    startCommand: ./main
+    envVars:
+      - key: DATABASE_URL
+        value: postgresql://neondb_owner:npg_VzoF2mdZ0hXp@ep-green-morning-a82bpjj4.eastus2.azure.neon.tech/neondb?sslmode=require

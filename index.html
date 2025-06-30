@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Job Queue UI</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: #f4f4f4; }
+        input, button { padding: 8px; margin: 5px; }
+        #log { background: #000; color: #0f0; padding: 10px; height: 200px; overflow-y: scroll; }
+        #jobs { margin-top: 20px; border-collapse: collapse; width: 100%; }
+        #jobs th, #jobs td { padding: 8px; border: 1px solid #ccc; }
+    </style>
+</head>
+<body>
+<h1>Job Queue Dashboard</h1>
+<form id="jobForm">
+    <input type="text" id="payload" placeholder="Enter job payload" required />
+    <button type="submit">Submit Job</button>
+</form>
+
+<div id="log"></div>
+
+<h2>All Jobs</h2>
+<table id="jobs">
+    <thead>
+    <tr>
+        <th>ID</th><th>Payload</th><th>Status</th><th>Result</th><th>Created At</th>
+    </tr>
+    </thead>
+    <tbody id="jobBody"></tbody>
+</table>
+
+<script>
+    const logBox = document.getElementById("log");
+
+    function log(message) {
+        const time = new Date().toLocaleTimeString();
+        logBox.innerHTML += `[${time}] ${message}<br/>`;
+        logBox.scrollTop = logBox.scrollHeight;
+    }
+
+    async function fetchJobs() {
+        try {
+            const res = await fetch("/jobs");
+            const jobs = await res.json();
+            const jobBody = document.getElementById("jobBody");
+            jobBody.innerHTML = jobs.map(job => `
+          <tr>
+            <td>${job.id}</td>
+            <td>${job.payload}</td>
+            <td>${job.status}</td>
+            <td>${job.result || "-"}</td>
+            <td>${new Date(job.created_at).toLocaleString()}</td>
+          </tr>
+        `).join("");
+        } catch (err) {
+            log("Failed to fetch jobs");
+        }
+    }
+
+    document.getElementById("jobForm").addEventListener("submit", async e => {
+        e.preventDefault();
+        const payload = document.getElementById("payload").value;
+        try {
+            log(`Submitting job: ${payload}`);
+            const res = await fetch("/jobs", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ payload })
+            });
+            const data = await res.json();
+            log(`Job submitted. ID: ${data.id}`);
+            document.getElementById("payload").value = "";
+            fetchJobs();
+        } catch (err) {
+            log("Error submitting job");
+        }
+    });
+
+    setInterval(fetchJobs, 3000);
+    fetchJobs();
+</script>
+</body>
+</html>
